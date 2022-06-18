@@ -267,10 +267,12 @@ def main(user_id):
     thisMonthDays = find_days_month(thisMonth,thisYear)
     
     aTotalScans = len(scans) #All Time Stats
+    if aTotalScans == 0:
+        return render_template("main.html", user=user, scans=scans, no_scans=True)
     aPendingScans = 0
     aResolvedScans = 0
     aUpvotes = 0
-    firstScanDate = scans[0]["scandate"].strftime('%Y-%m-%d').split("-")
+    firstScanDate = scans[0]["scandate"].strftime('%Y-%m-%d').split("-") if len(scans) != 0 else []
     
     yTotalScans = 0 #Yearly Stats
     yPendingScans = 0
@@ -302,67 +304,67 @@ def main(user_id):
     uThisMonthFrame = {}
     lastMonthFrame = {}
     uLastMonthFrame = {}
+    if len(firstScanDate) != 0:
+        increments = ((int(today[0])-int(firstScanDate[0]))+1)*12
+        iYearAdd = 0
+        for i in range (increments):
+            if i%12 == 0 and i!=0:
+                iYearAdd+=1
+            allTimeFrame[str(int(firstScanDate[0])+iYearAdd)[2:4]+"-"+str(i%12+1).zfill(2)] = 0
+            uAllTimeFrame[str(int(firstScanDate[0])+iYearAdd)[2:4]+"-"+str(i%12+1).zfill(2)] = 0
 
-    increments = ((int(today[0])-int(firstScanDate[0]))+1)*12
-    iYearAdd = 0
-    for i in range (increments):
-        if i%12 == 0 and i!=0:
-            iYearAdd+=1
-        allTimeFrame[str(int(firstScanDate[0])+iYearAdd)[2:4]+"-"+str(i%12+1).zfill(2)] = 0
-        uAllTimeFrame[str(int(firstScanDate[0])+iYearAdd)[2:4]+"-"+str(i%12+1).zfill(2)] = 0
+        for i in range(1,13):
+            thisYearFrame[str(thisYear)[2:4]+"-"+str(i).zfill(2)] = 0
+            uThisYearFrame[str(thisYear)[2:4]+"-"+str(i).zfill(2)] = 0 #Can just do uThisYearFrame = thisYearFrame?
+            lastYearFrame[str(thisYear)[2:4]+"-"+str(i).zfill(2)] = 0
+            uLastYearFrame[str(thisYear)[2:4]+"-"+str(i).zfill(2)] = 0
 
-    for i in range(1,13):
-        thisYearFrame[str(thisYear)[2:4]+"-"+str(i).zfill(2)] = 0
-        uThisYearFrame[str(thisYear)[2:4]+"-"+str(i).zfill(2)] = 0 #Can just do uThisYearFrame = thisYearFrame?
-        lastYearFrame[str(thisYear)[2:4]+"-"+str(i).zfill(2)] = 0
-        uLastYearFrame[str(thisYear)[2:4]+"-"+str(i).zfill(2)] = 0
+        for day in range(thisMonthDays):    
+            thisMonthFrame[day+1] = 0
+            uThisMonthFrame[day+1] = 0
 
-    for day in range(thisMonthDays):
-        thisMonthFrame[day+1] = 0
-        uThisMonthFrame[day+1] = 0
+        for day in range(lastMonthDays):
+            lastMonthFrame[day+1] = 0
+            uLastMonthFrame[day+1] = 0
 
-    for day in range(lastMonthDays):
-        lastMonthFrame[day+1] = 0
-        uLastMonthFrame[day+1] = 0
+        for scan in scans:
+            scan_upvotes = len(scan['vote_users'])
+            scan_status = scan['status']
+            date_time_obj_list = scan['scandate'].strftime('%Y-%m-%d').split("-")
+            scan_year = int(date_time_obj_list[0])
+            scan_month = int(date_time_obj_list[1])
+            scan_day = int(date_time_obj_list[2])
 
-    for scan in scans:
-        scan_upvotes = len(scan['vote_users'])
-        scan_status = scan['status']
-        date_time_obj_list = scan['scandate'].strftime('%Y-%m-%d').split("-")
-        scan_year = int(date_time_obj_list[0])
-        scan_month = int(date_time_obj_list[1])
-        scan_day = int(date_time_obj_list[2])
+            allTimeFrame[str(int(firstScanDate[0])+iYearAdd)[2:4]+"-"+str(scan_month).zfill(2)]+=1
+            uAllTimeFrame[str(int(firstScanDate[0])+iYearAdd)[2:4]+"-"+str(scan_month).zfill(2)]+=scan_upvotes
 
-        allTimeFrame[str(int(firstScanDate[0])+iYearAdd)[2:4]+"-"+str(scan_month).zfill(2)]+=1
-        uAllTimeFrame[str(int(firstScanDate[0])+iYearAdd)[2:4]+"-"+str(scan_month).zfill(2)]+=scan_upvotes
+            aUpvotes+=scan_upvotes
 
-        aUpvotes+=scan_upvotes
-
-        if scan_year==thisYear: #Finding if scan in current year
-            yTotalScans+=1
-            yUpvotes+=scan_upvotes
-            thisYearFrame[str(thisYear)[2:4]+"-"+str(scan_month).zfill(2)]+=1
-            uThisYearFrame[str(thisYear)[2:4]+"-"+str(scan_month).zfill(2)]+=scan_upvotes
-            if scan_month==thisMonth: #Finding if scan in current month
-                mTotalScans+=1
-                mUpvotes+=scan_upvotes
-                thisMonthFrame[scan_day]+=1
-                uThisMonthFrame[scan_day]+=scan_upvotes
-                mResolvedScans, mPendingScans = check_scan_status(scan_status, mResolvedScans, mPendingScans)
-            elif scan_month==lastMonth: #Finding if scan in last month
-                lmTotalScans+=1
-                lmUpvotes+=scan_upvotes
-                lastMonthFrame[scan_day]+=1
-                uLastMonthFrame[scan_day]+=scan_upvotes
-                lmResolvedScans, lmPendingScans = check_scan_status(scan_status, lmResolvedScans, lmPendingScans)
-            yResolvedScans, yPendingScans = check_scan_status(scan_status, yResolvedScans, yPendingScans)
-        elif scan_year==lastYear: #Finding if scan in last year
-            lyTotalScans+=1
-            lyUpvotes+=scan_upvotes
-            lastYearFrame[str(lastYear)[2:4]+"-"+str(scan_month).zfill(2)]+=1
-            uLastYearFrame[str(lastYear)[2:4]+"-"+str(scan_month).zfill(2)]+=scan_upvotes
-            lyResolvedScans, lyPendingScans = check_scan_status(scan_status, lyResolvedScans, lyPendingScans)
-        aResolvedScans, aPendingScans = check_scan_status(scan_status, aResolvedScans, aPendingScans)
+            if scan_year==thisYear: #Finding if scan in current year
+                yTotalScans+=1
+                yUpvotes+=scan_upvotes
+                thisYearFrame[str(thisYear)[2:4]+"-"+str(scan_month).zfill(2)]+=1
+                uThisYearFrame[str(thisYear)[2:4]+"-"+str(scan_month).zfill(2)]+=scan_upvotes
+                if scan_month==thisMonth: #Finding if scan in current month
+                    mTotalScans+=1
+                    mUpvotes+=scan_upvotes
+                    thisMonthFrame[scan_day]+=1
+                    uThisMonthFrame[scan_day]+=scan_upvotes
+                    mResolvedScans, mPendingScans = check_scan_status(scan_status, mResolvedScans, mPendingScans)
+                elif scan_month==lastMonth: #Finding if scan in last month
+                    lmTotalScans+=1
+                    lmUpvotes+=scan_upvotes
+                    lastMonthFrame[scan_day]+=1
+                    uLastMonthFrame[scan_day]+=scan_upvotes
+                    lmResolvedScans, lmPendingScans = check_scan_status(scan_status, lmResolvedScans, lmPendingScans)
+                yResolvedScans, yPendingScans = check_scan_status(scan_status, yResolvedScans, yPendingScans)
+            elif scan_year==lastYear: #Finding if scan in last year
+                lyTotalScans+=1
+                lyUpvotes+=scan_upvotes
+                lastYearFrame[str(lastYear)[2:4]+"-"+str(scan_month).zfill(2)]+=1
+                uLastYearFrame[str(lastYear)[2:4]+"-"+str(scan_month).zfill(2)]+=scan_upvotes
+                lyResolvedScans, lyPendingScans = check_scan_status(scan_status, lyResolvedScans, lyPendingScans)
+            aResolvedScans, aPendingScans = check_scan_status(scan_status, aResolvedScans, aPendingScans)
 
     allTimeStats = {'dataset': allTimeFrame, 'uDataset': uAllTimeFrame,'totalScans': aTotalScans, 'pendingScans': aPendingScans, 'resolvedScans': aResolvedScans, 'upvotes': aUpvotes, 'firstScanDate': firstScanDate}
     thisYearStats = {'dataset': thisYearFrame, 'uDataset': uThisYearFrame, 'totalScans': yTotalScans, 'pendingScans': yPendingScans, 'resolvedScans': yResolvedScans, 'upvotes': yUpvotes}
@@ -792,6 +794,18 @@ def api_welcome(userId):
         "message": "You Are verified"
     }
     return jsonify(return_data)
+
+@app.route('/api/change_username', methods=['POST'])
+@token_required
+def change_username(userId):
+    users = db['users']
+    username = request.get_json()['username']
+    if users.find_one({"username": username}) is not None:
+        return jsonify({"error": "1", "message": "Username Already Exists"})
+    else:
+        users.update_one({'_id': bson.ObjectId(session['logged_in_id'])}, {
+            '$set': {'username': username}})
+        return jsonify({"error": "0", "message": "Username Successfully Changed"})
 
 
 if __name__ == "__main__":
