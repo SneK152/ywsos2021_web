@@ -803,10 +803,31 @@ def change_username(userId):
     if users.find_one({"username": username}) is not None:
         return jsonify({"error": "1", "message": "Username Already Exists"})
     else:
-        users.update_one({'_id': bson.ObjectId(session['logged_in_id'])}, {
+        users.update_one({'_id': bson.ObjectId(userId)}, {
             '$set': {'username': username}})
         return jsonify({"error": "0", "message": "Username Successfully Changed"})
 
+@app.route("/api/change_password", methods=["POST"])
+@token_required
+def change_password(userId):
+    users = db['users']
+    user = users.find_one({'_id': bson.ObjectId(userId)})
+    oldPassword = request.get_json()['oldPass']
+    newPassword = request.get_json()['newPass']
+    if pbkdf2_sha256.verify(oldPassword, user['password_hash']):
+        users.update_one({'_id': bson.ObjectId(userId)}, {
+            '$set': {'password_hash': pbkdf2_sha256.hash(newPassword)}})
+        return jsonify({"error": "0", "message": "Password Successfully Changed"})
+    else:
+        return jsonify({"error": "1", "message": "Current Password Does Not Match With Database", "type": "oldPass"})
+
+@app.route("/api/delete_user", methods=["POST"])
+@token_required
+def delete_user(userId):
+    users = db["users"]
+    user = users.find_one({'_id': bson.ObjectId(userId)})
+    users.delete_one(user)
+    return jsonify({"error": "0", "message": "Account Successfully Deleted"})
 
 if __name__ == "__main__":
     minify_css(css_map)
