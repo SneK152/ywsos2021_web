@@ -2,6 +2,7 @@ venv/
 .env
 __pycache__/
 test_cases/__pycache__/
+/reports/
 test_cases/reports/
 documentation/_build/
 .idea/

@@ -73,7 +73,7 @@ content %}
             </div>
           </div>
           <div class="d-flex justify-content-center">
-            <button @click="updatePostStatus(scan.id)">
+            <button @click="updatePostStatus(scan.id)" :id="scan.title+scan.position.lat">
               <p v-if="!scan.status">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

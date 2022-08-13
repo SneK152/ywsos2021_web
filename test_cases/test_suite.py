@@ -6,6 +6,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.by import By
 import os
+import time
 from dotenv import load_dotenv
 import random
 from webdriver_manager.chrome import ChromeDriverManager
@@ -15,7 +16,8 @@ r = RandomWords()
 username_testchoice = r.get_random_word(minLength=7)
 password_testchoice = r.get_random_word(minLength=7)
 
-# HW ADD ENV VARIABLES
+# HW workflow testing, fix admin testing
+# HW clone ywsos2021_app into flutter and help w/ mbl
 APP_ROOT = os.path.join(os.path.dirname(__file__), '..')  # refers to application_top
 dotenv_path = os.path.join(APP_ROOT, '.env')
 load_dotenv(dotenv_path)
@@ -42,6 +44,64 @@ class HomeTest(unittest.TestCase):
         self.assertIn("Sign In", self.driver.page_source)
     
 
+    @classmethod
+    def tearDown(cls):
+        cls.driver.quit()
+
+class AdminTest(unittest.TestCase):
+    @classmethod
+    def setUp(cls):
+        options = webdriver.ChromeOptions()
+        options.add_argument("start-maximized")
+        # options.add_argument('headless')
+        cls.driver = webdriver.Chrome(ChromeDriverManager().install(),options=options)
+        cls.base_url = (os.getenv("DOMAIN")+"/login")
+        cls.driver.get(cls.base_url)
+
+    def test_adminEntry(self):
+        self.driver.get(self.base_url)
+        userInput = self.driver.find_element_by_id("username")
+        userInput.send_keys(os.getenv("TESTUSER"))
+        pwInput = self.driver.find_element_by_id("password")
+        pwInput.send_keys(os.getenv("TESTPW"))
+        submitButton = self.driver.find_element_by_id("submit")
+        submitButton.click()
+        WebDriverWait(self.driver, 15).until(expected_conditions.title_is('GeoRepair - Account'))
+        self.driver.get(os.getenv("DOMAIN") + "/admin")
+        WebDriverWait(self.driver, 15).until(expected_conditions.title_is('GeoRepair - Admin Panel'))
+
+    def test_markResolved(self):
+        self.driver.get(self.base_url)
+        userInput = self.driver.find_element_by_id("username")
+        userInput.send_keys(os.getenv("TESTUSER"))
+        pwInput = self.driver.find_element_by_id("password")
+        pwInput.send_keys(os.getenv("TESTPW"))
+        submitButton = self.driver.find_element_by_id("submit")
+        submitButton.click()
+        self.driver.get(os.getenv("DOMAIN") + "/upload")
+        titleInput = self.driver.find_element_by_id("title")
+        titleInput.send_keys("Last Test")
+        descInput = self.driver.find_element_by_id("desc")
+        descInput.send_keys("Admin Test Description- Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. ")
+        latInput = self.driver.find_element_by_id("lat")
+        latInput.clear()
+        latInput.send_keys("38.500102")
+        longInput = self.driver.find_element_by_id("long")
+        longInput.clear()
+        longInput.send_keys("-122.699760")
+        self.driver.find_element_by_id("file").send_keys(os.getcwd() + "/test_cases/test_image.jpeg")
+        submitTest = self.driver.find_element_by_id("submit")
+        submitTest.click()       
+        self.assertIn("Form successfully submitted", self.driver.page_source)
+        self.driver.get(os.getenv("DOMAIN") + "/admin")
+        WebDriverWait(self.driver, 100)
+        time.sleep(15)
+        # markResolvedButton = self.driver.find_element_by_xpath("//p[contains(text(),'Admin Test Title, -122.69976')]")
+        markResolvedButton = self.driver.find_element_by_id("Last Test38.500102")
+        print(markResolvedButton)
+        self.driver.execute_script("arguments[0].click();",markResolvedButton)
+        self.assertIn("Resolved", self.driver.page_source)
+ 
     @classmethod
     def tearDown(cls):
         cls.driver.quit()
@@ -99,7 +159,6 @@ class LoginTest(unittest.TestCase):
         self.driver.execute_script("arguments[0].click();",logoutButton1)
         logoutButton2 = self.driver.find_element_by_id("confirmLogout")
         self.driver.execute_script("arguments[0].click();",logoutButton2)
-        # logoutButton1.click()
         WebDriverWait(self.driver, 15).until(expected_conditions.title_is('GeoRepair - About'))
 
     @classmethod
@@ -134,7 +193,7 @@ class UploadTest(unittest.TestCase):
         longInput = self.driver.find_element_by_id("long")
         longInput.send_keys("151.2153")
         print(os.getcwd() + "test_image.jpeg")
-        self.driver.find_element_by_id("file").send_keys("/Volumes/contents/ywsos2021_web/test_cases")
+        self.driver.find_element_by_id("file").send_keys("/Volumes/contents/ywsos2021_web/test_cases/test_image.jpeg")
         submitTest = self.driver.find_element_by_id("submit")
         submitTest.click()       
         self.assertIn("Form successfully submitted", self.driver.page_source)

@@ -1,5 +1,6 @@
 import unittest
 import HtmlTestRunner
+from test_suite import AdminTest
 from test_suite import HomeTest
 from test_suite import LoginTest
 from test_suite import UploadTest
@@ -21,15 +22,16 @@ home_test = unittest.TestLoader().loadTestsFromTestCase(HomeTest)
 login_test = unittest.TestLoader().loadTestsFromTestCase(LoginTest)
 upload_test = unittest.TestLoader().loadTestsFromTestCase(UploadTest)
 signup_test = unittest.TestLoader().loadTestsFromTestCase(SignupTest)
+admin_test = unittest.TestLoader().loadTestsFromTestCase(AdminTest)
 test_suite = unittest.TestSuite(
     [
-        login_test
+        home_test, login_test, upload_test, signup_test, admin_test
     ]
 )
 
 
 # configure HTMLTestRunner options
-runner = HtmlTestRunner.HTMLTestRunner(report_title='Test Report', combine_reports=True, open_in_browser=True,output='test_cases/reports')
+runner = HtmlTestRunner.HTMLTestRunner(report_title='Test Report', combine_reports=True, open_in_browser=True,output='reports')
 
 # run the suite using HTMLTestRunner
 runner.run(test_suite)
